@@ -3,48 +3,102 @@
 
 // Game state
 bool started; // true when game has started
-bool ended; // true when game has ended
+bool ended;   // true when game has ended
 
-riv_vec2i ball_position;
+enum
+{
+    BALL_SIZE = 2,
+    PADDLE_HEIGHT = 2,
+    PADDLE_Y = 120,
+    BRICK_HEIGHT = 4,
+    BRICKS_PER_ROW = 8,
+    BRICKS_ROWS = 8,
+    NUM_BRICKS = BRICKS_PER_ROW * BRICKS_ROWS
+};
+
+struct brick
+{
+    riv_recti pos;
+    bool active;
+    riv_color_id color;
+};
+
+int score;
+riv_vec2i ball_pos;
 riv_vec2f ball_velocity;
 int64_t paddle_pos;
 int64_t paddle_width;
-
-enum {
-    PADDLE_HEIGHT = 2,
-    BRICK_SIZE = 8,
-};
+struct brick bricks[NUM_BRICKS];
 
 // Called when game starts
-void start_game() {
+void start_game()
+{
     riv_printf("GAME START\n");
     started = true;
+
+    // initialize score
+    score = 0;
+
+    // initialize paddle
     paddle_pos = riv->width / 2;
     paddle_width = 20;
+
+    // initialize ball
+    ball_pos = (riv_vec2i){paddle_pos, PADDLE_Y - BALL_SIZE};
+    ball_velocity = (riv_vec2f){1, -1};
+
+    // initialize bricks
+    int64_t brick_width = riv->width / BRICKS_PER_ROW;
+    for (int y = 0; y < BRICKS_ROWS; y++)
+    {
+        for (int x = 0; x < BRICKS_PER_ROW; x++)
+        {
+            bricks[y * BRICKS_PER_ROW + x] = (struct brick){
+                (riv_recti){x * brick_width, y * BRICK_HEIGHT, brick_width, BRICK_HEIGHT},
+                true,
+                RIV_COLOR_RED + y};
+        }
+    }
 }
 
 // Called when game ends
-void end_game() {
+void end_game()
+{
     riv_printf("GAME OVER\n");
     ended = true;
     // Quit in 3 seconds
-    riv->quit_frame = riv->frame + 3*riv->target_fps;
+    riv->quit_frame = riv->frame + 3 * riv->target_fps;
 }
 
 // Update game logic
-void update_game() {
+void update_game()
+{
     // TODO: update game
     end_game();
 }
 
 // Draw the game map
-void draw_game() {
-    // TODO: draw game
-    riv_draw_rect_fill(paddle_pos - paddle_width/2, 120, paddle_width, PADDLE_HEIGHT, RIV_COLOR_LIGHTGREEN);
+void draw_game()
+{
+    // draw paddle
+    riv_draw_rect_fill(paddle_pos - paddle_width / 2, PADDLE_Y, paddle_width, PADDLE_HEIGHT, RIV_COLOR_LIGHTGREEN);
+
+    // draw ball
+    riv_draw_circle_fill(ball_pos.x, ball_pos.y, BALL_SIZE, RIV_COLOR_ORANGE);
+
+    // draw bricks
+    for (int i = 0; i < NUM_BRICKS; i++)
+    {
+        if (bricks[i].active)
+        {
+            riv_draw_rect_fill(bricks[i].pos.x + 1, bricks[i].pos.y + 1, bricks[i].pos.width - 1, bricks[i].pos.height - 1, bricks[i].color);
+        }
+    }
 }
 
 // Draw game start screen
-void draw_start_screen() {
+void draw_start_screen()
+{
     // Draw snake title
     riv_draw_text(
         "breakout",               // text to draw
@@ -58,11 +112,12 @@ void draw_start_screen() {
     // Make "press to start blink" by changing the color depending on the frame number
     uint32_t col = (riv->frame % 2 == 0) ? RIV_COLOR_LIGHTRED : RIV_COLOR_DARKRED;
     // Draw press to start
-    riv_draw_text("PRESS TO START", RIV_SPRITESHEET_FONT_5X7, RIV_CENTER, 64, 64+16, 1, col);
+    riv_draw_text("PRESS TO START", RIV_SPRITESHEET_FONT_5X7, RIV_CENTER, 64, 64 + 16, 1, col);
 }
 
 // Draw game over screen
-void draw_end_screen() {
+void draw_end_screen()
+{
     // Draw last game frame
     draw_game();
     // Draw GAME OVER
@@ -70,64 +125,55 @@ void draw_end_screen() {
 }
 
 // Called every frame to update game state
-void update() {
-    if (!started) { // Game not started yet
+void update()
+{
+    if (!started)
+    { // Game not started yet
         // Let game start whenever a key has been pressed
-        if (riv->key_toggle_count > 0) {
+        if (riv->key_toggle_count > 0)
+        {
             start_game();
         }
-    } else if (!ended) { // Game is progressing
+    }
+    else if (!ended)
+    { // Game is progressing
         update_game();
     }
 }
 
-/*
-void draw_ball() {
-    riv_draw_rect(
-        ball_position.x, ball_position.y, 4, 4, RIV_COLOR_LIGHTGREEN
-    );
-}
-
-void draw_brick(riv_recti *brick) {
-    if (brick->active) {
-        riv_draw_rect(
-            brick->x, brick->y, brick->width, brick->height, RIV_COLOR_LIGHTGREEN
-        );
-    }
-}
-
-void draw_bricks(struct Brick bricks[], int count) {
-    for (int i = 0; i < count; i++) {
-        draw_brick(&bricks[i]);
-    }
-}
-*/
-
 // Called every frame to draw the game
-void draw() {
+void draw()
+{
     // Clear screen
     riv_clear(RIV_COLOR_DARKSLATE);
     // Draw different screens depending on the game state
-    if (!started) { // Game not started yet
+    if (!started)
+    { // Game not started yet
         draw_start_screen();
-    } else if (!ended) { // Game is progressing
+    }
+    else if (!ended)
+    { // Game is progressing
         draw_game();
-    } else { // Game ended
+    }
+    else
+    { // Game ended
         draw_end_screen();
     }
 }
 
 // Entry point
-int main() {
+int main()
+{
     // Main loop, keep presenting frames until user quit or game ends
     riv->width = 128;
     riv->height = 128;
     riv->target_fps = 8;
-    do {
+    do
+    {
         // Update game state
         update();
         // Draw game graphics
         draw();
-    } while(riv_present());
+    } while (riv_present());
     return 0;
 }
