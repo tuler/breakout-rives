@@ -97,7 +97,47 @@ void update_game()
         ball_velocity.x = -ball_velocity.x;
     }
 
-    // end_game();
+    // bounce ball off ceiling
+    if (ball_pos.y - BALL_SIZE < 0)
+    {
+        ball_velocity.y = -ball_velocity.y;
+    }
+
+    // bounce ball off paddle
+    if (ball_pos.y + BALL_SIZE > PADDLE_Y && ball_pos.y - BALL_SIZE < PADDLE_Y + PADDLE_HEIGHT)
+    {
+        if (ball_pos.x + BALL_SIZE > paddle_pos && ball_pos.x - BALL_SIZE < paddle_pos + paddle_width)
+        {
+            ball_velocity.y = -ball_velocity.y;
+        }
+    }
+
+    // break bricks
+    for (int i = 0; i < NUM_BRICKS; i++)
+    {
+        if (bricks[i].active)
+        {
+            if (ball_pos.x + BALL_SIZE > bricks[i].pos.x && ball_pos.x - BALL_SIZE < bricks[i].pos.x + bricks[i].pos.width &&
+                ball_pos.y + BALL_SIZE > bricks[i].pos.y && ball_pos.y - BALL_SIZE < bricks[i].pos.y + bricks[i].pos.height)
+            {
+                bricks[i].active = false;
+                ball_velocity.y = -ball_velocity.y;
+                score++;
+            }
+        }
+    }
+
+    // game over if all bricks are broken
+    if (score == NUM_BRICKS)
+    {
+        end_game();
+    }
+
+    // game over if ball falls off the screen
+    if (ball_pos.y > riv->height)
+    {
+        end_game();
+    }
 }
 
 // Draw the game map
