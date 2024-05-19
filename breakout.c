@@ -116,9 +116,17 @@ void update_game()
             if (ball_pos.x + BALL_SIZE > bricks[i].pos.x && ball_pos.x - BALL_SIZE < bricks[i].pos.x + bricks[i].pos.width &&
                 ball_pos.y + BALL_SIZE > bricks[i].pos.y && ball_pos.y - BALL_SIZE < bricks[i].pos.y + bricks[i].pos.height)
             {
+                // break the brick
                 bricks[i].active = false;
+
+                // bounce the ball
                 ball_velocity.y = -ball_velocity.y;
+
+                // increment score
                 score++;
+                riv->outcard_len = riv_snprintf((char *)riv->outcard, RIV_SIZE_OUTCARD, "JSON{\"score\":%d}", score);
+
+                // break only one brick per frame
                 break;
             }
         }
