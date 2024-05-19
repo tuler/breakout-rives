@@ -8,7 +8,7 @@ bool ended;   // true when game has ended
 enum
 {
     BALL_SIZE = 4,
-    BRICK_HEIGHT = 4,
+    BRICK_HEIGHT = 8,
     BRICKS_PER_ROW = 8,
     BRICKS_ROWS = 8,
     MOVEMENT_SPEED = 5,
