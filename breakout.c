@@ -13,6 +13,7 @@ enum
     BRICK_HEIGHT = 4,
     BRICKS_PER_ROW = 8,
     BRICKS_ROWS = 8,
+    MOVEMENT_SPEED = 5,
     NUM_BRICKS = BRICKS_PER_ROW * BRICKS_ROWS
 };
 
@@ -73,15 +74,27 @@ void end_game()
 // Update game logic
 void update_game()
 {
-    // TODO: update game
-    end_game();
+    if (riv->keys[RIV_GAMEPAD_LEFT].down)
+    {
+        // move paddle to the left
+        paddle_pos -= MOVEMENT_SPEED;
+        paddle_pos = paddle_pos < 0 ? 0 : paddle_pos;
+    }
+    else if (riv->keys[RIV_GAMEPAD_RIGHT].down)
+    {
+        // move paddle to the right
+        paddle_pos += MOVEMENT_SPEED;
+        paddle_pos = (paddle_pos + paddle_width) > riv->width ? riv->width - paddle_width : paddle_pos;
+    }
+
+    // end_game();
 }
 
 // Draw the game map
 void draw_game()
 {
     // draw paddle
-    riv_draw_rect_fill(paddle_pos - paddle_width / 2, PADDLE_Y, paddle_width, PADDLE_HEIGHT, RIV_COLOR_LIGHTGREEN);
+    riv_draw_rect_fill(paddle_pos, PADDLE_Y, paddle_width, PADDLE_HEIGHT, RIV_COLOR_LIGHTGREEN);
 
     // draw ball
     riv_draw_circle_fill(ball_pos.x, ball_pos.y, BALL_SIZE, RIV_COLOR_ORANGE);
