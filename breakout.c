@@ -46,7 +46,7 @@ void start_game()
 
     // initialize ball
     ball_pos = (riv_vec2i){paddle_pos, PADDLE_Y - BALL_SIZE};
-    ball_velocity = (riv_vec2f){1, -1};
+    ball_velocity = (riv_vec2f){5, -5};
 
     // initialize bricks
     int64_t brick_width = riv->width / BRICKS_PER_ROW;
@@ -85,6 +85,16 @@ void update_game()
         // move paddle to the right
         paddle_pos += MOVEMENT_SPEED;
         paddle_pos = (paddle_pos + paddle_width) > riv->width ? riv->width - paddle_width : paddle_pos;
+    }
+
+    // move ball
+    ball_pos.x += ball_velocity.x;
+    ball_pos.y += ball_velocity.y;
+
+    // bounce ball off walls
+    if (ball_pos.x - BALL_SIZE < 0 || ball_pos.x + BALL_SIZE > riv->width)
+    {
+        ball_velocity.x = -ball_velocity.x;
     }
 
     // end_game();
