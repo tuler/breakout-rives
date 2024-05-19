@@ -157,6 +157,11 @@ void draw_game()
             riv_draw_rect_fill(bricks[i].pos.x + 1, bricks[i].pos.y + 1, bricks[i].pos.width - 1, bricks[i].pos.height - 1, bricks[i].color);
         }
     }
+
+    // draw score
+    char buf[128];
+    riv_snprintf(buf, sizeof(buf), "SCORE %d", score);
+    riv_draw_text(buf, RIV_SPRITESHEET_FONT_3X5, RIV_BOTTOMLEFT, 1, 128 - 1, 1, RIV_COLOR_WHITE);
 }
 
 // Draw game start screen
