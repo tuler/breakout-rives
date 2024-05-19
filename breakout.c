@@ -28,6 +28,63 @@ riv_vec2f ball_velocity;
 riv_recti paddle;
 struct brick bricks[NUM_BRICKS];
 
+// sound configuration
+riv_waveform_desc break_sfx = {
+    .type = RIV_WAVEFORM_NOISE,
+    .attack = 0.025,
+    .decay = 0.075,
+    .sustain = 0.075,
+    .release = 0.025,
+    .start_frequency = 250,
+    .end_frequency = 100,
+    .amplitude = 0.25,
+    .sustain_level = 0.1,
+    .duty_cycle = 0.5,
+    .pan = 0.0,
+};
+
+riv_waveform_desc bounce_sfx = {
+    .type = RIV_WAVEFORM_TRIANGLE,
+    .attack = 0.025,
+    .decay = 0.075,
+    .sustain = 0.125,
+    .release = 0.120,
+    .start_frequency = 250,
+    .end_frequency = 250,
+    .amplitude = 0.25,
+    .sustain_level = 0.3,
+    .duty_cycle = 0.5,
+    .pan = 0.0,
+};
+
+riv_waveform_desc gameover_sfx = {
+    .type = RIV_WAVEFORM_PULSE,
+    .attack = 0.01,
+    .decay = 0.150,
+    .sustain = 0.1,
+    .release = 0.1,
+    .start_frequency = 110,
+    .end_frequency = 22,
+    .amplitude = 0.2,
+    .sustain_level = 0.5,
+    .duty_cycle = 0.5,
+    .pan = 0.0,
+};
+
+riv_waveform_desc victory_sfx = {
+    .type = RIV_WAVEFORM_PULSE,
+    .attack = 0.01,
+    .decay = 0.2,
+    .sustain = 0.3,
+    .release = 0.2,
+    .start_frequency = 55,
+    .end_frequency = 1760,
+    .amplitude = 0.2,
+    .sustain_level = 0.25,
+    .duty_cycle = 0.125,
+    .pan = 0.0,
+};
+
 // Called when game starts
 void start_game()
 {
@@ -90,12 +147,14 @@ void update_game()
     // bounce ball off walls
     if (ball_pos.x - BALL_SIZE < 0 || ball_pos.x + BALL_SIZE > riv->width)
     {
+        riv_waveform(&bounce_sfx);
         ball_velocity.x = -ball_velocity.x;
     }
 
     // bounce ball off ceiling
     if (ball_pos.y - BALL_SIZE < 0)
     {
+        riv_waveform(&bounce_sfx);
         ball_velocity.y = -ball_velocity.y;
     }
 
@@ -104,6 +163,7 @@ void update_game()
     {
         if (ball_pos.x + BALL_SIZE > paddle.x && ball_pos.x - BALL_SIZE < paddle.x + paddle.width)
         {
+            riv_waveform(&bounce_sfx);
             ball_velocity.y = -ball_velocity.y;
         }
     }
@@ -126,6 +186,9 @@ void update_game()
                 score++;
                 riv->outcard_len = riv_snprintf((char *)riv->outcard, RIV_SIZE_OUTCARD, "JSON{\"score\":%d}", score);
 
+                // Play the break sound
+                riv_waveform(&break_sfx);
+
                 // break only one brick per frame
                 break;
             }
@@ -135,12 +198,14 @@ void update_game()
     // game over if all bricks are broken
     if (score == NUM_BRICKS)
     {
+        riv_waveform(&victory_sfx);
         end_game();
     }
 
     // game over if ball falls off the screen
     if (ball_pos.y > riv->height)
     {
+        riv_waveform(&gameover_sfx);
         end_game();
     }
 }
