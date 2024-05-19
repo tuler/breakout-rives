@@ -7,9 +7,7 @@ bool ended;   // true when game has ended
 
 enum
 {
-    BALL_SIZE = 2,
-    PADDLE_HEIGHT = 2,
-    PADDLE_Y = 120,
+    BALL_SIZE = 4,
     BRICK_HEIGHT = 4,
     BRICKS_PER_ROW = 8,
     BRICKS_ROWS = 8,
@@ -27,8 +25,7 @@ struct brick
 int score;
 riv_vec2i ball_pos;
 riv_vec2f ball_velocity;
-int64_t paddle_pos;
-int64_t paddle_width;
+riv_recti paddle;
 struct brick bricks[NUM_BRICKS];
 
 // Called when game starts
@@ -41,12 +38,11 @@ void start_game()
     score = 0;
 
     // initialize paddle
-    paddle_pos = riv->width / 2;
-    paddle_width = 20;
+    paddle = (riv_recti){riv->width / 2, riv->height - 20, 40, 4};
 
     // initialize ball
-    ball_pos = (riv_vec2i){paddle_pos, PADDLE_Y - BALL_SIZE};
-    ball_velocity = (riv_vec2f){5, -5};
+    ball_pos = (riv_vec2i){paddle.x, paddle.y - BALL_SIZE};
+    ball_velocity = (riv_vec2f){1, -1};
 
     // initialize bricks
     int64_t brick_width = riv->width / BRICKS_PER_ROW;
@@ -77,14 +73,14 @@ void update_game()
     if (riv->keys[RIV_GAMEPAD_LEFT].down)
     {
         // move paddle to the left
-        paddle_pos -= MOVEMENT_SPEED;
-        paddle_pos = paddle_pos < 0 ? 0 : paddle_pos;
+        paddle.x -= MOVEMENT_SPEED;
+        paddle.x = paddle.x < 0 ? 0 : paddle.x;
     }
     else if (riv->keys[RIV_GAMEPAD_RIGHT].down)
     {
         // move paddle to the right
-        paddle_pos += MOVEMENT_SPEED;
-        paddle_pos = (paddle_pos + paddle_width) > riv->width ? riv->width - paddle_width : paddle_pos;
+        paddle.x += MOVEMENT_SPEED;
+        paddle.x = (paddle.x + paddle.width) > riv->width ? riv->width - paddle.width : paddle.x;
     }
 
     // move ball
@@ -104,9 +100,9 @@ void update_game()
     }
 
     // bounce ball off paddle
-    if (ball_pos.y + BALL_SIZE > PADDLE_Y && ball_pos.y - BALL_SIZE < PADDLE_Y + PADDLE_HEIGHT)
+    if (ball_pos.y + BALL_SIZE > paddle.y && ball_pos.y - BALL_SIZE < paddle.y + paddle.height)
     {
-        if (ball_pos.x + BALL_SIZE > paddle_pos && ball_pos.x - BALL_SIZE < paddle_pos + paddle_width)
+        if (ball_pos.x + BALL_SIZE > paddle.x && ball_pos.x - BALL_SIZE < paddle.x + paddle.width)
         {
             ball_velocity.y = -ball_velocity.y;
         }
@@ -123,6 +119,7 @@ void update_game()
                 bricks[i].active = false;
                 ball_velocity.y = -ball_velocity.y;
                 score++;
+                break;
             }
         }
     }
@@ -144,7 +141,7 @@ void update_game()
 void draw_game()
 {
     // draw paddle
-    riv_draw_rect_fill(paddle_pos, PADDLE_Y, paddle_width, PADDLE_HEIGHT, RIV_COLOR_LIGHTGREEN);
+    riv_draw_rect_fill(paddle.x, paddle.y, paddle.width, paddle.height, RIV_COLOR_LIGHTGREEN);
 
     // draw ball
     riv_draw_circle_fill(ball_pos.x, ball_pos.y, BALL_SIZE, RIV_COLOR_ORANGE);
@@ -161,7 +158,7 @@ void draw_game()
     // draw score
     char buf[128];
     riv_snprintf(buf, sizeof(buf), "SCORE %d", score);
-    riv_draw_text(buf, RIV_SPRITESHEET_FONT_3X5, RIV_BOTTOMLEFT, 1, 128 - 1, 1, RIV_COLOR_WHITE);
+    riv_draw_text(buf, RIV_SPRITESHEET_FONT_3X5, RIV_BOTTOMLEFT, 1, riv->height - 4, 1, RIV_COLOR_WHITE);
 }
 
 // Draw game start screen
@@ -172,15 +169,15 @@ void draw_start_screen()
         "breakout",               // text to draw
         RIV_SPRITESHEET_FONT_5X7, // sprite sheet id of the font
         RIV_CENTER,               // anchor point on the text bounding box
-        64,                       // anchor x
-        64,                       // anchor y
-        2,                        // text size multiplier
+        riv->width / 2,           // anchor x
+        riv->height / 2,          // anchor y
+        4,                        // text size multiplier
         RIV_COLOR_LIGHTGREEN      // text color
     );
     // Make "press to start blink" by changing the color depending on the frame number
-    uint32_t col = (riv->frame % 2 == 0) ? RIV_COLOR_LIGHTRED : RIV_COLOR_DARKRED;
+    uint32_t col = (riv->frame % 8 == 0) ? RIV_COLOR_DARKRED : RIV_COLOR_LIGHTRED;
     // Draw press to start
-    riv_draw_text("PRESS TO START", RIV_SPRITESHEET_FONT_5X7, RIV_CENTER, 64, 64 + 16, 1, col);
+    riv_draw_text("PRESS TO START", RIV_SPRITESHEET_FONT_5X7, RIV_CENTER, riv->width / 2, riv->height / 2 + 32, 1, col);
 }
 
 // Draw game over screen
@@ -189,7 +186,7 @@ void draw_end_screen()
     // Draw last game frame
     draw_game();
     // Draw GAME OVER
-    riv_draw_text("GAME OVER", RIV_SPRITESHEET_FONT_5X7, RIV_CENTER, 64, 64, 2, RIV_COLOR_RED);
+    riv_draw_text("GAME OVER", RIV_SPRITESHEET_FONT_5X7, RIV_CENTER, riv->width / 2, riv->height / 2, 2, RIV_COLOR_RED);
 }
 
 // Called every frame to update game state
@@ -233,9 +230,9 @@ void draw()
 int main()
 {
     // Main loop, keep presenting frames until user quit or game ends
-    riv->width = 128;
-    riv->height = 128;
-    riv->target_fps = 8;
+    // riv->width = 128;
+    // riv->height = 128;
+    riv->target_fps = 60;
     do
     {
         // Update game state
