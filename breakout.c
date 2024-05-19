@@ -2,8 +2,9 @@
 #include <riv.h>
 
 // Game state
-bool started; // true when game has started
-bool ended;   // true when game has ended
+bool started;       // true when game has started
+bool ball_released; // true when ball has been released
+bool ended;         // true when game has ended
 
 enum
 {
@@ -90,6 +91,7 @@ void start_game()
 {
     riv_printf("GAME START\n");
     started = true;
+    ball_released = false;
 
     // initialize score
     score = 0;
@@ -98,7 +100,7 @@ void start_game()
     paddle = (riv_recti){riv->width / 2, riv->height - 20, 40, 4};
 
     // initialize ball
-    ball_pos = (riv_vec2i){paddle.x, paddle.y - BALL_SIZE};
+    ball_pos = (riv_vec2i){paddle.x + paddle.width / 2, paddle.y - BALL_SIZE};
     ball_velocity = (riv_vec2f){1, -1};
 
     // initialize bricks
@@ -127,22 +129,48 @@ void end_game()
 // Update game logic
 void update_game()
 {
+    if (
+        riv->keys[RIV_GAMEPAD_START].press ||
+        riv->keys[RIV_GAMEPAD_SELECT].press ||
+        riv->keys[RIV_GAMEPAD_A1].press ||
+        riv->keys[RIV_GAMEPAD_A2].press ||
+        riv->keys[RIV_GAMEPAD_A3].press ||
+        riv->keys[RIV_GAMEPAD_A4].press ||
+        riv->keys[RIV_GAMEPAD_L1].press ||
+        riv->keys[RIV_GAMEPAD_L2].press ||
+        riv->keys[RIV_GAMEPAD_L3].press)
+    {
+        ball_released = true;
+    }
     if (riv->keys[RIV_GAMEPAD_LEFT].down)
     {
         // move paddle to the left
         paddle.x -= MOVEMENT_SPEED;
         paddle.x = paddle.x < 0 ? 0 : paddle.x;
+
+        if (!ball_released)
+        {
+            ball_pos = (riv_vec2i){paddle.x + paddle.width / 2, paddle.y - BALL_SIZE};
+        }
     }
     else if (riv->keys[RIV_GAMEPAD_RIGHT].down)
     {
         // move paddle to the right
         paddle.x += MOVEMENT_SPEED;
         paddle.x = (paddle.x + paddle.width) > riv->width ? riv->width - paddle.width : paddle.x;
+
+        if (!ball_released)
+        {
+            ball_pos = (riv_vec2i){paddle.x + paddle.width / 2, paddle.y - BALL_SIZE};
+        }
     }
 
     // move ball
-    ball_pos.x += ball_velocity.x;
-    ball_pos.y += ball_velocity.y;
+    if (ball_released)
+    {
+        ball_pos.x += ball_velocity.x;
+        ball_pos.y += ball_velocity.y;
+    }
 
     // bounce ball off walls
     if (ball_pos.x - BALL_SIZE < 0 || ball_pos.x + BALL_SIZE > riv->width)
